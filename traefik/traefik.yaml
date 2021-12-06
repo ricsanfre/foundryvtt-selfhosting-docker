@@ -1,0 +1,23 @@
+api:
+  dashboard: true
+  debug: false
+
+entryPoints:
+  http:
+    address: ":80"
+  https:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "tcp://socket-proxy:2375"
+    watch: true
+    exposedbydefault: false
+
+certificatesResolvers:
+  http:
+    acme:
+      email: admin@ricsanfre.com
+      storage: acme.json
+      httpChallenge:
+        entryPoint: http

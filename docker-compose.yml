@@ -1,0 +1,88 @@
+version: "3.8"
+
+secrets:
+  config_json:
+    file: ~/foundry/secrets.json
+
+services:
+  docker-proxy:
+    container_name: docker-proxy
+    environment:
+      CONTAINERS: 1
+    image: tecnativa/docker-socket-proxy
+    networks:
+      - web
+    ports:
+      - 2375
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+  traefik:
+    depends_on:
+      - docker-proxy
+    image: traefik:v2.0
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - web
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./traefik/traefik.yml:/traefik.yml:ro
+      - ./traefik/acme.json:/acme.json
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.rule=Host(`monitor.yourdomain.com`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$3bVLXoBF$$7rHNxHT2cLZLOr57lHBOv1"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`monitor.yourdomain.com`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=http"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+  foundryvtt:
+    depends_on:
+      - traefik
+    container_name: foundryvtt
+    image: felddy/foundryvtt:release
+    hostname: dndtools
+    networks:
+      - web
+    init: true
+    restart: "unless-stopped"
+    volumes:
+      - type: bind
+        source: ~/foundry/data
+        target: /data
+    environment:
+      - CONTAINER_CACHE=/data/container_cache
+    ports:
+      - target: 30000
+        protocol: tcp
+    secrets:
+      - source: config_json
+        target: config.json
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.foundryvtt.entrypoints=http"
+      - "traefik.http.routers.foundryvtt.rule=Host(`foundry.yourdomain.com`)"
+      - "traefik.http.middlewares.foundryvtt-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.foundryvtt.middlewares=foundryvtt-https-redirect"
+      - "traefik.http.routers.foundryvtt-secure.entrypoints=https"
+      - "traefik.http.routers.foundryvtt-secure.rule=Host(`foundry.yourdomain.com`)"
+      - "traefik.http.routers.fouundryvtt-secure.tls=true"
+      - "traefik.http.routers.foundryvtt-secure.tls.certresolver=http"
+      - "traefik.http.routers.foundryvtt-secure.service=foundryvtt"
+      - "traefik.http.services.foundryvtt.loadbalancer.server.port=30000"
+
+networks:
+  web:
+    external: true
+                                  
