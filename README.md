@@ -331,6 +331,7 @@ This configuration will start Traefik service and enabling its dashboard at `mon
 
 ## Configuring and running Foundry VTT
 
+
 ### Create folders and basic Foundry VTT configuration files
 
 - Step 1 create foundry directory within User's home directory
@@ -344,6 +345,17 @@ This configuration will start Traefik service and enabling its dashboard at `mon
 
     mkdir ~/foundry/data/container_cache
 
+### Create foundry user
+
+Foundry VTT docker image runs as not privileged user (`foundry`) and container automatically change the owner of the `data` directory (docker bind mount)
+
+The same user should exits in the host, in order to show properly the permisions of the files. Check [Dockerfile](https://raw.githubusercontent.com/felddy/foundryvtt-docker/develop/Dockerfile) to see which is the internal user configured
+
+    sudo groupadd --system -g 421 foundry
+    sudo useradd --system --uid 421 --gid foundry foundry
+
+
+
 ### Create docker secrets file to store Foundry VTT credentials and license key
 
 - Create file `~/foundry/secrets.json`
@@ -356,6 +368,8 @@ This configuration will start Traefik service and enabling its dashboard at `mon
   "foundry_license_key": "foundry-license-key"
   }
   ```
+
+  This will be used by docker image to automatically download the software, configure admin password and installing the license key.
 
 ### Add Foundry VTT to docker compose
 
@@ -381,6 +395,7 @@ secrets:
         target: /data
     environment:
       - CONTAINER_CACHE=/data/container_cache
+      - FOUNDRY_PROXY_SSL=true
     ports:
       - target: 30000
         protocol: tcp
@@ -389,6 +404,7 @@ secrets:
         target: config.json
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=web"
       - "traefik.http.routers.foundryvtt.entrypoints=http"
       - "traefik.http.routers.foundryvtt.rule=Host(`foundry.ricsanfre.com`)"
       - "traefik.http.middlewares.foundryvtt-https-redirect.redirectscheme.scheme=https"
@@ -402,5 +418,7 @@ secrets:
 
 ```
 
+Docker image is started using two environment variables:
 
-```
+- `CONTAINER_CACHE=/data/container_cache`: To use a cache for storing installation files instead of download it every time the container is booted
+- `FOUNDRY_PROXY_SSL=true`: to indicate that FoundryVTT is running behind a reverse proxy that uses SSL (Traefik). This allows invitation links and A/V functionality to work as if the Foundry Server had SSL configured directly.
