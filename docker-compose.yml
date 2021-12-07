@@ -63,6 +63,7 @@ services:
         target: /data
     environment:
       - CONTAINER_CACHE=/data/container_cache
+      - FOUNDRY_PROXY_SSL=true
     ports:
       - target: 30000
         protocol: tcp
@@ -71,6 +72,7 @@ services:
         target: config.json
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=web"
       - "traefik.http.routers.foundryvtt.entrypoints=http"
       - "traefik.http.routers.foundryvtt.rule=Host(`foundry.yourdomain.com`)"
       - "traefik.http.middlewares.foundryvtt-https-redirect.redirectscheme.scheme=https"
