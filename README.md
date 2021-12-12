@@ -395,6 +395,8 @@ secrets:
         target: /data
     environment:
       - CONTAINER_CACHE=/data/container_cache
+      - CONTAINER_PATCHES=/data/container_patches
+      - CONTAINER_PRESERVE_OWNER=/data/Data/my_assets
       - FOUNDRY_PROXY_SSL=true
     ports:
       - target: 30000
@@ -422,3 +424,68 @@ Docker image is started using two environment variables:
 
 - `CONTAINER_CACHE=/data/container_cache`: To use a cache for storing installation files instead of download it every time the container is booted
 - `FOUNDRY_PROXY_SSL=true`: to indicate that FoundryVTT is running behind a reverse proxy that uses SSL (Traefik). This allows invitation links and A/V functionality to work as if the Foundry Server had SSL configured directly.
+
+- `CONTAINER_PATCHES=/data/container_patches`: path to list of scripts that docker image executes after instalallation before starting the application.
+- `CONTAINER_PRESERVE_OWNER=/data/Data/my_assets`: Avoid changing of permissions of the assets folders
+
+
+## Optional configuration in case of VM running in VBOX
+
+VTT assets (tokens, tiles, etc) shared from host system (windows server) to guest system (Ubuntu VM), avoiding the copy of GBs of information to the VM.
+
+
+- Step 1. Add a shared folder to the VM and install Guest Additions.
+
+  - Open VirtualBox
+
+  - Right-click your VM, then click Settings
+
+  - Go to Shared Folders section
+
+  - Add a new shared folder
+
+  - On Add Share prompt, select the Folder Path in your host that you want to be accessible inside your VM. (my_assets_local_folder)
+
+  - In the Folder Name field, type `my_assets`
+
+  - Uncheck Read-only and Auto-mount, and check Make Permanent
+
+  - Start your VM
+
+  - Install VBOX guest additions
+
+    Once your VM is up and running, go to Devices menu -> Insert Guest Additions CD image menu
+    Use the following command to mount the CD:
+
+        sudo mount /dev/cdrom /media/cdrom
+
+    Install dependencies for VirtualBox guest additions:
+
+      sudo apt-get update
+      sudo apt-get install build-essential linux-headers-`uname -r`
+
+    Execute the installation
+
+      sudo /media/cdrom/./VBoxLinuxAdditions.run
+
+- Step 2: Create mounting target directory
+    
+     sudo mkdir $HOME/foundry/data/Data/my_assets
+
+- Step 3: Change owner of the target directory to user `foundry`
+
+      sudo chown -R foundry:foundry $HOME/foundry/data/Data/my_assets
+
+- Step 4: Change `/etc/fstab` file to automount the shared directory
+    Add the followin line
+      my_assets /home/user/foundry/data/Data/my_assets vboxsf  rw,uid=421,gid=421  0 0
+    
+    where
+     `- `my_assets` is the name of the shared folder specified in step 1
+      - `rw,uid=421, gid=421` are the mounting options: mounted as readwrite and changing the owner to user id `foundry` and group_id `foundry
+      - `vboxsf` is the filesystem type 
+
+- Step 5. Reboot server
+
+- Step 6: check the shared folder is mounted automatically in /home/user/foundry/data/Data/my_assets
+

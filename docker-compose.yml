@@ -63,6 +63,8 @@ services:
         target: /data
     environment:
       - CONTAINER_CACHE=/data/container_cache
+      - CONTAINER_PATCHES=/data/container_patches
+      - CONTAINER_PRESERVE_OWNER=/data/Data/my_assets
       - FOUNDRY_PROXY_SSL=true
     ports:
       - target: 30000
