@@ -478,12 +478,14 @@ VTT assets (tokens, tiles, etc) shared from host system (windows server) to gues
 
 - Step 4: Change `/etc/fstab` file to automount the shared directory
     Add the followin line
+    
       my_assets /home/user/foundry/data/Data/my_assets vboxsf  rw,uid=421,gid=421  0 0
     
     where
-     `- `my_assets` is the name of the shared folder specified in step 1
-      - `rw,uid=421, gid=421` are the mounting options: mounted as readwrite and changing the owner to user id `foundry` and group_id `foundry
-      - `vboxsf` is the filesystem type 
+    
+    - `my_assets` is the name of the shared folder specified in step 1
+    - `rw,uid=421, gid=421` are the mounting options: mounted as readwrite and changing the owner to user id `foundry` and group_id `foundry
+    - `vboxsf` is the filesystem type 
 
 - Step 5. Reboot server
 
