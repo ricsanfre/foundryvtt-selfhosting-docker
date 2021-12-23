@@ -44,17 +44,25 @@ if [[ -f "$INSTALL_PATH/main.mjs" ]]
 then
 
    foundryVersion=`readJson $INSTALL_PATH/package.json version`
-   foundryMiniorVersion=`echo ${foundryVersion:2:1}`
+   foundryMajorVersion=`echo ${foundryVersion:0:1}`
+   foundryMinorVersion=`echo ${foundryVersion:2:1}`
    # Set the SERVER_MOD path based on the version of Foundry
-   if [[ "$foundryMiniorVersion" == "8" ]]
+   if [[ "$foundryMajorVersion" == "9" ]]
    then
-      # Foundry is version 0.8.x
-      SERVER_MOD=$DATA_PATH/Data/modules/plutonium/server/0.8.x/plutonium-backend.mjs
+      # Foundry is version 0.9.x
+      SERVER_MOD=$DATA_PATH/Data/modules/plutonium/server/v9/plutonium-backend.mjs
    else
-      # Foundry is version 0.7.x
-      SERVER_MOD=$DATA_PATH/Data/modules/plutonium/server/0.7.x/plutonium-backend.js
-   fi
+      # Foundry is version 0.8.x
+      if [[ "$foundryMinorVersion" == "8" ]]
+      then
+        # Foundry is version 0.8.x
+        SERVER_MOD=$DATA_PATH/Data/modules/plutonium/server/0.8.x/plutonium-backend.js
+      else
+        # Doundry is version 0.7.x
+        SERVER_MOD=$DATA_PATH/Data/modules/plutonium/server/0.7.x/plutonium-backend.js
 
+      fi
+   fi
    # Determine if the backend is already modded, if not, make the mod
    if grep -q "plutonium" $INSTALL_PATH/main.mjs
    then
@@ -63,9 +71,9 @@ then
       cp $INSTALL_PATH/main.mjs $INSTALL_PATH/main.mjs.bak
       echo "Plutonium edit not found, making edit"
 
-      if [[ "$foundryMiniorVersion" == "8" ]]
+      if [[ "$foundryMajorVersion" == "9" ]] || [[ "$foundryMinorVersion" == "8" ]]
       then
-         # Foundry is version 0.8.x
+         # Foundry is version v9 or 0.8.x
          sed "26,32{32{r ${CONTAINER_PATCH_PATH}/src/modification.txt
                   }; d}" $INSTALL_PATH/main.mjs -i
       else
