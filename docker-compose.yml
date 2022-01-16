@@ -33,6 +33,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ./traefik/traefik.yml:/traefik.yml:ro
       - ./traefik/acme.json:/acme.json
+      - ./traefik/access.log:/data/access.log
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http"
@@ -81,7 +82,7 @@ services:
       - "traefik.http.routers.foundryvtt.middlewares=foundryvtt-https-redirect"
       - "traefik.http.routers.foundryvtt-secure.entrypoints=https"
       - "traefik.http.routers.foundryvtt-secure.rule=Host(`foundry.yourdomain.com`)"
-      - "traefik.http.routers.fouundryvtt-secure.tls=true"
+      - "traefik.http.routers.foundryvtt-secure.tls=true"
       - "traefik.http.routers.foundryvtt-secure.tls.certresolver=http"
       - "traefik.http.routers.foundryvtt-secure.service=foundryvtt"
       - "traefik.http.services.foundryvtt.loadbalancer.server.port=30000"
