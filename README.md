@@ -178,9 +178,15 @@ ethernets:
 
 ## Create docker network
 
-Create docker network to interconnect all docker containers
+Create a couple of docker network to interconnect all docker containers:
 
-  docker network create web
+```shell
+docker network create frontend
+docker network create backend
+```
+Containers accesing to `frontend` network are the only ones that are exposing its ports to the host. Since the host will have internet acces, those exposed services will be accesible from Internet. Traefik container will be the only container to be attached to this network.
+
+Containers accesing to `backend` network are not exposing any port to the server and so they are not accesible directly form internet. All backend containers will be attached to this network.
 
 ## Configuring and running Traefik
 
@@ -236,7 +242,7 @@ networks:
 
   providers:
     docker:
-      endpoint: "tcp://socket-proxy:2375"
+      endpoint: "tcp://docker-proxy:2375"
       watch: true
       exposedbydefault: false
 
@@ -406,13 +412,12 @@ secrets:
         target: config.json
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=web"
       - "traefik.http.routers.foundryvtt.entrypoints=http"
-      - "traefik.http.routers.foundryvtt.rule=Host(`foundry.ricsanfre.com`)"
+      - "traefik.http.routers.foundryvtt.rule=Host(`foundry.yourdomain.com`)"
       - "traefik.http.middlewares.foundryvtt-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.foundryvtt.middlewares=foundryvtt-https-redirect"
       - "traefik.http.routers.foundryvtt-secure.entrypoints=https"
-      - "traefik.http.routers.foundryvtt-secure.rule=Host(`foundry.ricsanfre.com`)"
+      - "traefik.http.routers.foundryvtt-secure.rule=Host(`foundry.yourdomain.com`)"
       - "traefik.http.routers.fouundryvtt-secure.tls=true"
       - "traefik.http.routers.foundryvtt-secure.tls.certresolver=http"
       - "traefik.http.routers.foundryvtt-secure.service=foundryvtt"

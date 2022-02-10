@@ -11,11 +11,13 @@ services:
       CONTAINERS: 1
     image: tecnativa/docker-socket-proxy
     networks:
-      - web
+      - backend
     ports:
       - 2375
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  # Traefik front-end
   traefik:
     depends_on:
       - docker-proxy
@@ -25,7 +27,8 @@ services:
     security_opt:
       - no-new-privileges:true
     networks:
-      - web
+      - frontend
+      - backend
     ports:
       - 80:80
       - 443:443
@@ -37,17 +40,18 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http"
-      - "traefik.http.routers.traefik.rule=Host(`monitor.yourdomain.com`)"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$3bVLXoBF$$7rHNxHT2cLZLOr57lHBOv1"
+      - "traefik.http.routers.traefik.rule=Host(`$TRAEFIK_URL`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=$TRAEFIK_BASIC_AUTH_PASSWD"
       - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
       - "traefik.http.routers.traefik-secure.entrypoints=https"
-      - "traefik.http.routers.traefik-secure.rule=Host(`monitor.yourdomain.com`)"
+      - "traefik.http.routers.traefik-secure.rule=Host(`$TRAEFIK_URL`)"
       - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
       - "traefik.http.routers.traefik-secure.tls=true"
       - "traefik.http.routers.traefik-secure.tls.certresolver=http"
       - "traefik.http.routers.traefik-secure.service=api@internal"
 
+  # Foundry VTT
   foundryvtt:
     depends_on:
       - traefik
@@ -55,7 +59,7 @@ services:
     image: felddy/foundryvtt:release
     hostname: dndtools
     networks:
-      - web
+      - backend
     init: true
     restart: "unless-stopped"
     volumes:
@@ -75,19 +79,20 @@ services:
         target: config.json
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=web"
+      - "traefik.docker.network=dmz"
       - "traefik.http.routers.foundryvtt.entrypoints=http"
-      - "traefik.http.routers.foundryvtt.rule=Host(`foundry.yourdomain.com`)"
+      - "traefik.http.routers.foundryvtt.rule=Host(`$FOUNDRY_URL`)"
       - "traefik.http.middlewares.foundryvtt-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.foundryvtt.middlewares=foundryvtt-https-redirect"
       - "traefik.http.routers.foundryvtt-secure.entrypoints=https"
-      - "traefik.http.routers.foundryvtt-secure.rule=Host(`foundry.yourdomain.com`)"
+      - "traefik.http.routers.foundryvtt-secure.rule=Host(`$FOUNDRY_URL`)"
       - "traefik.http.routers.foundryvtt-secure.tls=true"
       - "traefik.http.routers.foundryvtt-secure.tls.certresolver=http"
       - "traefik.http.routers.foundryvtt-secure.service=foundryvtt"
       - "traefik.http.services.foundryvtt.loadbalancer.server.port=30000"
 
 networks:
-  web:
+  frontend:
     external: true
-                                  
+  backend:
+    external: true
